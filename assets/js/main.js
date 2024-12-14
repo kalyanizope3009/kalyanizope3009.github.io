@@ -1,335 +1,196 @@
 /*
-	Forty by HTML5 UP
-	html5up.net | @ajlkn
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+    Forty by HTML5 UP
+    Modernized version without jQuery
+    Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 */
 
-(function($) {
-
-	var	$window = $(window),
-		$body = $('body'),
-		$wrapper = $('#wrapper'),
-		$header = $('#header'),
-		$banner = $('#banner');
-
-	// Breakpoints.
-		breakpoints({
-			xlarge:    ['1281px',   '1680px'   ],
-			large:     ['981px',    '1280px'   ],
-			medium:    ['737px',    '980px'    ],
-			small:     ['481px',    '736px'    ],
-			xsmall:    ['361px',    '480px'    ],
-			xxsmall:   [null,       '360px'    ]
-		});
-
-	/**
-	 * Applies parallax scrolling to an element's background image.
-	 * @return {jQuery} jQuery object.
-	 */
-	$.fn._parallax = (browser.name == 'ie' || browser.name == 'edge' || browser.mobile) ? function() { return $(this) } : function(intensity) {
-
-		var	$window = $(window),
-			$this = $(this);
-
-		if (this.length == 0 || intensity === 0)
-			return $this;
-
-		if (this.length > 1) {
-
-			for (var i=0; i < this.length; i++)
-				$(this[i])._parallax(intensity);
-
-			return $this;
-
-		}
-
-		if (!intensity)
-			intensity = 0.25;
-
-		$this.each(function() {
-
-			var $t = $(this),
-				on, off;
-
-			on = function() {
-
-				$t.css('background-position', 'center 100%, center 100%, center 0px');
-
-				$window
-					.on('scroll._parallax', function() {
-
-						var pos = parseInt($window.scrollTop()) - parseInt($t.position().top);
-
-						$t.css('background-position', 'center ' + (pos * (-1 * intensity)) + 'px');
-
-					});
-
-			};
-
-			off = function() {
-
-				$t
-					.css('background-position', '');
-
-				$window
-					.off('scroll._parallax');
-
-			};
-
-			breakpoints.on('<=medium', off);
-			breakpoints.on('>medium', on);
-
-		});
-
-		$window
-			.off('load._parallax resize._parallax')
-			.on('load._parallax resize._parallax', function() {
-				$window.trigger('scroll');
-			});
-
-		return $(this);
-
-	};
-
-	// Play initial animations on page load.
-		$window.on('load', function() {
-			window.setTimeout(function() {
-				$body.removeClass('is-preload');
-			}, 100);
-		});
-
-	// Clear transitioning state on unload/hide.
-		$window.on('unload pagehide', function() {
-			window.setTimeout(function() {
-				$('.is-transitioning').removeClass('is-transitioning');
-			}, 250);
-		});
-
-	// Fix: Enable IE-only tweaks.
-		if (browser.name == 'ie' || browser.name == 'edge')
-			$body.addClass('is-ie');
-
-	// Scrolly.
-		$('.scrolly').scrolly({
-			offset: function() {
-				return $header.height() - 2;
-			}
-		});
-
-	// Tiles.
-		var $tiles = $('.tiles > article');
-
-		$tiles.each(function() {
-
-			var $this = $(this),
-				$image = $this.find('.image'), $img = $image.find('img'),
-				$link = $this.find('.link'),
-				x;
-
-			// Image.
-
-				// Set image.
-					$this.css('background-image', 'url(' + $img.attr('src') + ')');
-
-				// Set position.
-					if (x = $img.data('position'))
-						$image.css('background-position', x);
-
-				// Hide original.
-					$image.hide();
-
-			// Link.
-				if ($link.length > 0) {
-
-					$x = $link.clone()
-						.text('')
-						.addClass('primary')
-						.appendTo($this);
-
-					$link = $link.add($x);
-
-					$link.on('click', function(event) {
-
-						var href = $link.attr('href');
-
-						// Prevent default.
-							event.stopPropagation();
-							event.preventDefault();
-
-						// Target blank?
-							if ($link.attr('target') == '_blank') {
-
-								// Open in new tab.
-									window.open(href);
-
-							}
-
-						// Otherwise ...
-							else {
-
-								// Start transitioning.
-									$this.addClass('is-transitioning');
-									$wrapper.addClass('is-transitioning');
-
-								// Redirect.
-									window.setTimeout(function() {
-										location.href = href;
-									}, 500);
-
-							}
-
-					});
-
-				}
-
-		});
-
-	// Header.
-		if ($banner.length > 0
-		&&	$header.hasClass('alt')) {
-
-			$window.on('resize', function() {
-				$window.trigger('scroll');
-			});
-
-			$window.on('load', function() {
-
-				$banner.scrollex({
-					bottom:		$header.height() + 10,
-					terminate:	function() { $header.removeClass('alt'); },
-					enter:		function() { $header.addClass('alt'); },
-					leave:		function() { $header.removeClass('alt'); $header.addClass('reveal'); }
-				});
-
-				window.setTimeout(function() {
-					$window.triggerHandler('scroll');
-				}, 100);
-
-			});
-
-		}
-
-	// Banner.
-		$banner.each(function() {
-
-			var $this = $(this),
-				$image = $this.find('.image'), $img = $image.find('img');
-
-			// Parallax.
-				$this._parallax(0.275);
-
-			// Image.
-				if ($image.length > 0) {
-
-					// Set image.
-						$this.css('background-image', 'url(' + $img.attr('src') + ')');
-
-					// Hide original.
-						$image.hide();
-
-				}
-
-		});
-
-	// Menu.
-		var $menu = $('#menu'),
-			$menuInner;
-
-		$menu.wrapInner('<div class="inner"></div>');
-		$menuInner = $menu.children('.inner');
-		$menu._locked = false;
-
-		$menu._lock = function() {
-
-			if ($menu._locked)
-				return false;
-
-			$menu._locked = true;
-
-			window.setTimeout(function() {
-				$menu._locked = false;
-			}, 350);
-
-			return true;
-
-		};
-
-		$menu._show = function() {
-
-			if ($menu._lock())
-				$body.addClass('is-menu-visible');
-
-		};
-
-		$menu._hide = function() {
-
-			if ($menu._lock())
-				$body.removeClass('is-menu-visible');
-
-		};
-
-		$menu._toggle = function() {
-
-			if ($menu._lock())
-				$body.toggleClass('is-menu-visible');
-
-		};
-
-		$menuInner
-			.on('click', function(event) {
-				event.stopPropagation();
-			})
-			.on('click', 'a', function(event) {
-
-				var href = $(this).attr('href');
-
-				event.preventDefault();
-				event.stopPropagation();
-
-				// Hide.
-					$menu._hide();
-
-				// Redirect.
-					window.setTimeout(function() {
-						window.location.href = href;
-					}, 250);
-
-			});
-
-		$menu
-			.appendTo($body)
-			.on('click', function(event) {
-
-				event.stopPropagation();
-				event.preventDefault();
-
-				$body.removeClass('is-menu-visible');
-
-			})
-			.append('<a class="close" href="#menu">Close</a>');
-
-		$body
-			.on('click', 'a[href="#menu"]', function(event) {
-
-				event.stopPropagation();
-				event.preventDefault();
-
-				// Toggle.
-					$menu._toggle();
-
-			})
-			.on('click', function(event) {
-
-				// Hide.
-					$menu._hide();
-
-			})
-			.on('keydown', function(event) {
-
-				// Hide on escape.
-					if (event.keyCode == 27)
-						$menu._hide();
-
-			});
-
-})(jQuery);
+(() => {
+    const windowElement = window;
+    const bodyElement = document.body;
+    const wrapperElement = document.getElementById('wrapper');
+    const headerElement = document.getElementById('header');
+    const bannerElement = document.getElementById('banner');
+
+    // Utility: Add breakpoints
+    const breakpoints = {
+        xlarge: [1281, 1680],
+        large: [981, 1280],
+        medium: [737, 980],
+        small: [481, 736],
+        xsmall: [361, 480],
+        xxsmall: [0, 360],
+        isMatch: function (key) {
+            const [min, max] = this[key];
+            const width = window.innerWidth;
+            return (!min || width >= min) && (!max || width <= max);
+        },
+    };
+
+    // Parallax scrolling
+    const applyParallax = (element, intensity = 0.25) => {
+        if (!element) return;
+        const onScroll = () => {
+            const offset = window.scrollY - element.offsetTop;
+            element.style.backgroundPosition = `center ${offset * -intensity}px`;
+        };
+        window.addEventListener('scroll', onScroll);
+        onScroll();
+    };
+
+    // Play initial animations on page load
+    windowElement.addEventListener('load', () => {
+        setTimeout(() => {
+            bodyElement.classList.remove('is-preload');
+        }, 100);
+    });
+
+    // Clear transitioning state on unload/hide
+    windowElement.addEventListener('unload', () => {
+        setTimeout(() => {
+            document.querySelectorAll('.is-transitioning').forEach(el => {
+                el.classList.remove('is-transitioning');
+            });
+        }, 250);
+    });
+
+    // IE-specific tweaks
+    if (/Trident|Edge/.test(navigator.userAgent)) {
+        bodyElement.classList.add('is-ie');
+    }
+
+    // Smooth scrolling for links with the "scrolly" class
+    document.querySelectorAll('.scrolly').forEach(link => {
+        link.addEventListener('click', event => {
+            event.preventDefault();
+            const targetId = link.getAttribute('href').slice(1);
+            const target = document.getElementById(targetId);
+            if (target) {
+                window.scrollTo({
+                    top: target.offsetTop - (headerElement.offsetHeight - 2),
+                    behavior: 'smooth',
+                });
+            }
+        });
+    });
+
+    // Tiles functionality
+    document.querySelectorAll('.tiles > article').forEach(tile => {
+        const imageElement = tile.querySelector('.image img');
+        if (imageElement) {
+            tile.style.backgroundImage = `url(${imageElement.src})`;
+            const position = imageElement.dataset.position;
+            if (position) {
+                tile.style.backgroundPosition = position;
+            }
+            imageElement.style.display = 'none';
+        }
+
+        const linkElement = tile.querySelector('.link');
+        if (linkElement) {
+            const clonedLink = linkElement.cloneNode();
+            clonedLink.textContent = '';
+            clonedLink.classList.add('primary');
+            tile.appendChild(clonedLink);
+
+            [linkElement, clonedLink].forEach(link => {
+                link.addEventListener('click', event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const href = linkElement.getAttribute('href');
+                    if (linkElement.target === '_blank') {
+                        window.open(href);
+                    } else {
+                        tile.classList.add('is-transitioning');
+                        wrapperElement.classList.add('is-transitioning');
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 500);
+                    }
+                });
+            });
+        }
+    });
+
+    // Banner functionality
+    if (bannerElement && headerElement.classList.contains('alt')) {
+        const onScroll = () => {
+            if (window.scrollY > bannerElement.offsetHeight - headerElement.offsetHeight) {
+                headerElement.classList.remove('alt');
+                headerElement.classList.add('reveal');
+            } else {
+                headerElement.classList.add('alt');
+                headerElement.classList.remove('reveal');
+            }
+        };
+        window.addEventListener('scroll', onScroll);
+        onScroll();
+    }
+
+    // Apply parallax to banners
+    if (bannerElement) {
+        applyParallax(bannerElement, 0.275);
+    }
+
+    // Menu functionality
+    const menuElement = document.getElementById('menu');
+    if (menuElement) {
+        const menuInner = document.createElement('div');
+        menuInner.classList.add('inner');
+        while (menuElement.firstChild) {
+            menuInner.appendChild(menuElement.firstChild);
+        }
+        menuElement.appendChild(menuInner);
+
+        let isMenuLocked = false;
+        const lockMenu = () => {
+            if (isMenuLocked) return false;
+            isMenuLocked = true;
+            setTimeout(() => {
+                isMenuLocked = false;
+            }, 350);
+            return true;
+        };
+
+        const showMenu = () => {
+            if (lockMenu()) bodyElement.classList.add('is-menu-visible');
+        };
+
+        const hideMenu = () => {
+            if (lockMenu()) bodyElement.classList.remove('is-menu-visible');
+        };
+
+        const toggleMenu = () => {
+            if (lockMenu()) bodyElement.classList.toggle('is-menu-visible');
+        };
+
+        menuInner.addEventListener('click', event => event.stopPropagation());
+        menuInner.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                hideMenu();
+                setTimeout(() => {
+                    window.location.href = link.getAttribute('href');
+                }, 250);
+            });
+        });
+
+        menuElement.addEventListener('click', event => {
+            event.stopPropagation();
+            event.preventDefault();
+            hideMenu();
+        });
+
+        menuElement.insertAdjacentHTML('beforeend', '<a class="close" href="#menu">Close</a>');
+
+        bodyElement.addEventListener('click', hideMenu);
+        bodyElement.addEventListener('keydown', event => {
+            if (event.key === 'Escape') hideMenu();
+        });
+
+        document.querySelector('a[href="#menu"]').addEventListener('click', event => {
+            event.preventDefault();
+            toggleMenu();
+        });
+    }
+})();
