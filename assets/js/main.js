@@ -1,196 +1,294 @@
-/*
-    Forty by HTML5 UP
-    Modernized version without jQuery
-    Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
-*/
+(function() {
+    "use strict";
 
-(() => {
-    const windowElement = window;
-    const bodyElement = document.body;
-    const wrapperElement = document.getElementById('wrapper');
-    const headerElement = document.getElementById('header');
-    const bannerElement = document.getElementById('banner');
+    // DOM elements
+    const bodyEl = document.body;
+    const wrapperEl = document.getElementById('wrapper');
+    const headerEl = document.getElementById('header');
+    const bannerEl = document.getElementById('banner');
+    const menuEl = document.getElementById('menu');
 
-    // Utility: Add breakpoints
-    const breakpoints = {
-        xlarge: [1281, 1680],
-        large: [981, 1280],
-        medium: [737, 980],
-        small: [481, 736],
-        xsmall: [361, 480],
-        xxsmall: [0, 360],
-        isMatch: function (key) {
-            const [min, max] = this[key];
-            const width = window.innerWidth;
-            return (!min || width >= min) && (!max || width <= max);
-        },
-    };
+    /***************************************************************************
+     * 1) Initial Animations and Page Unload/Hide
+     **************************************************************************/
 
-    // Parallax scrolling
-    const applyParallax = (element, intensity = 0.25) => {
-        if (!element) return;
-        const onScroll = () => {
-            const offset = window.scrollY - element.offsetTop;
-            element.style.backgroundPosition = `center ${offset * -intensity}px`;
-        };
-        window.addEventListener('scroll', onScroll);
-        onScroll();
-    };
-
-    // Play initial animations on page load
-    windowElement.addEventListener('load', () => {
-        setTimeout(() => {
-            bodyElement.classList.remove('is-preload');
-        }, 100);
+    // On window load, remove the 'is-preload' class after a small delay.
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        bodyEl.classList.remove('is-preload');
+      }, 100);
     });
 
-    // Clear transitioning state on unload/hide
-    windowElement.addEventListener('unload', () => {
-        setTimeout(() => {
-            document.querySelectorAll('.is-transitioning').forEach(el => {
-                el.classList.remove('is-transitioning');
-            });
-        }, 250);
-    });
+    // Clear transitioning state on unload/hide (useful for back button navigation).
+    window.addEventListener('pagehide', clearTransitioningClasses);
+    window.addEventListener('unload', clearTransitioningClasses);
 
-    // IE-specific tweaks
-    if (/Trident|Edge/.test(navigator.userAgent)) {
-        bodyElement.classList.add('is-ie');
+    function clearTransitioningClasses() {
+      setTimeout(() => {
+        const transitioningEls = document.querySelectorAll('.is-transitioning');
+        transitioningEls.forEach(el => el.classList.remove('is-transitioning'));
+      }, 250);
     }
 
-    // Smooth scrolling for links with the "scrolly" class
-    document.querySelectorAll('.scrolly').forEach(link => {
-        link.addEventListener('click', event => {
-            event.preventDefault();
-            const targetId = link.getAttribute('href').slice(1);
-            const target = document.getElementById(targetId);
-            if (target) {
-                window.scrollTo({
-                    top: target.offsetTop - (headerElement.offsetHeight - 2),
-                    behavior: 'smooth',
-                });
-            }
+    /***************************************************************************
+     * 2) Smooth Scroll for Anchor Links (Scrolly Replacement)
+     **************************************************************************/
+
+    // Any <a> element with class="scrolly" will scroll smoothly to its target.
+    const scrollyLinks = document.querySelectorAll('a.scrolly');
+    scrollyLinks.forEach(link => {
+      link.addEventListener('click', event => {
+        event.preventDefault();
+
+        const targetId = link.getAttribute('href');
+        if (!targetId || !targetId.startsWith('#') || targetId === '#') return;
+
+        const targetEl = document.querySelector(targetId);
+        if (!targetEl) return;
+
+        // Smoothly scroll to the target, accounting for header height.
+        const headerHeight = headerEl ? headerEl.offsetHeight - 2 : 0;
+        const targetPosition = targetEl.getBoundingClientRect().top + window.scrollY - headerHeight;
+
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
         });
+      });
     });
 
-    // Tiles functionality
-    document.querySelectorAll('.tiles > article').forEach(tile => {
-        const imageElement = tile.querySelector('.image img');
-        if (imageElement) {
-            tile.style.backgroundImage = `url(${imageElement.src})`;
-            const position = imageElement.dataset.position;
-            if (position) {
-                tile.style.backgroundPosition = position;
-            }
-            imageElement.style.display = 'none';
-        }
+    /***************************************************************************
+     * 3) Tiles: Background Image & Link Handling
+     **************************************************************************/
 
-        const linkElement = tile.querySelector('.link');
-        if (linkElement) {
-            const clonedLink = linkElement.cloneNode();
-            clonedLink.textContent = '';
-            clonedLink.classList.add('primary');
-            tile.appendChild(clonedLink);
+    const tileArticles = document.querySelectorAll('.tiles > article');
+    tileArticles.forEach(articleEl => {
+      const imageContainer = articleEl.querySelector('.image');
+      if (!imageContainer) return;
 
-            [linkElement, clonedLink].forEach(link => {
-                link.addEventListener('click', event => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const href = linkElement.getAttribute('href');
-                    if (linkElement.target === '_blank') {
-                        window.open(href);
-                    } else {
-                        tile.classList.add('is-transitioning');
-                        wrapperElement.classList.add('is-transitioning');
-                        setTimeout(() => {
-                            window.location.href = href;
-                        }, 500);
-                    }
-                });
-            });
-        }
-    });
+      const imgEl = imageContainer.querySelector('img');
+      if (!imgEl) return;
 
-    // Banner functionality
-    if (bannerElement && headerElement.classList.contains('alt')) {
-        const onScroll = () => {
-            if (window.scrollY > bannerElement.offsetHeight - headerElement.offsetHeight) {
-                headerElement.classList.remove('alt');
-                headerElement.classList.add('reveal');
-            } else {
-                headerElement.classList.add('alt');
-                headerElement.classList.remove('reveal');
-            }
-        };
-        window.addEventListener('scroll', onScroll);
-        onScroll();
-    }
+      // Use the image as a background
+      articleEl.style.backgroundImage = `url("${imgEl.src}")`;
 
-    // Apply parallax to banners
-    if (bannerElement) {
-        applyParallax(bannerElement, 0.275);
-    }
+      // If the <img> has data-position, set that on the .image container’s background-position
+      const customPosition = imgEl.getAttribute('data-position');
+      if (customPosition) {
+        imageContainer.style.backgroundPosition = customPosition;
+      }
 
-    // Menu functionality
-    const menuElement = document.getElementById('menu');
-    if (menuElement) {
-        const menuInner = document.createElement('div');
-        menuInner.classList.add('inner');
-        while (menuElement.firstChild) {
-            menuInner.appendChild(menuElement.firstChild);
-        }
-        menuElement.appendChild(menuInner);
+      // Hide the original image
+      imageContainer.style.display = 'none';
 
-        let isMenuLocked = false;
-        const lockMenu = () => {
-            if (isMenuLocked) return false;
-            isMenuLocked = true;
+      // Link logic
+      const linkEl = articleEl.querySelector('.link');
+      if (!linkEl) return;
+
+      // Clone the link, turn it into an overlay "primary" button
+      const linkClone = linkEl.cloneNode(true);
+      linkClone.textContent = '';
+      linkClone.classList.add('primary');
+      articleEl.appendChild(linkClone);
+
+      // Combined link set
+      [linkEl, linkClone].forEach(item => {
+        item.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const href = linkEl.getAttribute('href');
+          const target = linkEl.getAttribute('target');
+
+          if (target === '_blank') {
+            // Open in new tab
+            window.open(href);
+          } else {
+            // Transition effect, then redirect
+            articleEl.classList.add('is-transitioning');
+            wrapperEl.classList.add('is-transitioning');
             setTimeout(() => {
-                isMenuLocked = false;
-            }, 350);
-            return true;
-        };
-
-        const showMenu = () => {
-            if (lockMenu()) bodyElement.classList.add('is-menu-visible');
-        };
-
-        const hideMenu = () => {
-            if (lockMenu()) bodyElement.classList.remove('is-menu-visible');
-        };
-
-        const toggleMenu = () => {
-            if (lockMenu()) bodyElement.classList.toggle('is-menu-visible');
-        };
-
-        menuInner.addEventListener('click', event => event.stopPropagation());
-        menuInner.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', event => {
-                event.preventDefault();
-                event.stopPropagation();
-                hideMenu();
-                setTimeout(() => {
-                    window.location.href = link.getAttribute('href');
-                }, 250);
-            });
+              window.location.href = href;
+            }, 500);
+          }
         });
+      });
+    });
 
-        menuElement.addEventListener('click', event => {
-            event.stopPropagation();
-            event.preventDefault();
-            hideMenu();
+    /***************************************************************************
+     * 4) Banner: "Alt" Header Behavior (Scrollex Replacement) + Parallax
+     **************************************************************************/
+
+    if (bannerEl && headerEl && headerEl.classList.contains('alt')) {
+      // Intersection Observer for toggling .alt and .reveal on header
+      // Logic: 
+      //   - If banner is in the viewport, add .alt to header
+      //   - If banner is out of the viewport, remove .alt, add .reveal to header
+
+      const observerOptions = {
+        root: null,
+        rootMargin: `-${headerEl.offsetHeight + 10}px 0px 0px 0px`, 
+        threshold: 0
+      };
+
+      const bannerObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            // Banner is visible
+            headerEl.classList.add('alt');
+            headerEl.classList.remove('reveal');
+          } else {
+            // Banner is not visible
+            headerEl.classList.remove('alt');
+            headerEl.classList.add('reveal');
+          }
         });
+      }, observerOptions);
 
-        menuElement.insertAdjacentHTML('beforeend', '<a class="close" href="#menu">Close</a>');
-
-        bodyElement.addEventListener('click', hideMenu);
-        bodyElement.addEventListener('keydown', event => {
-            if (event.key === 'Escape') hideMenu();
-        });
-
-        document.querySelector('a[href="#menu"]').addEventListener('click', event => {
-            event.preventDefault();
-            toggleMenu();
-        });
+      bannerObserver.observe(bannerEl);
     }
+
+    // Simple parallax effect for the banner background image
+    // (Similar logic to the old plugin, but in vanilla JS).
+    const parallaxIntensity = 0.275;
+    setupParallax(bannerEl, parallaxIntensity);
+
+    // Also set the banner's background image from its .image > img
+    if (bannerEl) {
+      const bannerImageContainer = bannerEl.querySelector('.image');
+      if (bannerImageContainer) {
+        const bannerImg = bannerImageContainer.querySelector('img');
+        if (bannerImg) {
+          bannerEl.style.backgroundImage = `url("${bannerImg.src}")`;
+          bannerImageContainer.style.display = 'none';
+        }
+      }
+    }
+
+    /**
+     * Vanilla parallax for a background image on a single element.
+     * @param {Element} element - The banner element.
+     * @param {number} intensity - Parallax intensity.
+     */
+    function setupParallax(element, intensity) {
+      if (!element) return;
+
+      // This function is called on every scroll event
+      const onScroll = () => {
+        const rect = element.getBoundingClientRect();
+        // Distance from top of viewport to element's top
+        const offsetTop = rect.top + window.scrollY; 
+        const scrollPos = window.scrollY - offsetTop;
+        // Adjust background-position with negative intensity
+        element.style.backgroundPosition = `center ${scrollPos * (-1 * intensity)}px`;
+      };
+
+      // We only want parallax above "medium" breakpoint in the original code,
+      // but we have no breakpoints logic now, so let's always do it for demo.
+      window.addEventListener('scroll', onScroll);
+      window.addEventListener('resize', onScroll);
+
+      // Initial position
+      onScroll();
+    }
+
+    /***************************************************************************
+     * 5) Menu Logic
+     **************************************************************************/
+
+    if (menuEl) {
+      // Wrap existing menu content in .inner
+      const menuInner = document.createElement('div');
+      menuInner.classList.add('inner');
+
+      // Move children into .inner
+      while (menuEl.firstChild) {
+        menuInner.appendChild(menuEl.firstChild);
+      }
+      menuEl.appendChild(menuInner);
+
+      let menuLocked = false;
+      function lockMenu() {
+        if (menuLocked) return false;
+        menuLocked = true;
+        setTimeout(() => { menuLocked = false; }, 350);
+        return true;
+      }
+
+      function showMenu() {
+        if (lockMenu()) {
+          bodyEl.classList.add('is-menu-visible');
+        }
+      }
+
+      function hideMenu() {
+        if (lockMenu()) {
+          bodyEl.classList.remove('is-menu-visible');
+        }
+      }
+
+      function toggleMenu() {
+        if (lockMenu()) {
+          bodyEl.classList.toggle('is-menu-visible');
+        }
+      }
+
+      // Stop click events inside .inner from bubbling up to menuEl
+      menuInner.addEventListener('click', event => {
+        event.stopPropagation();
+      });
+
+      // Handle links inside the menu
+      menuInner.querySelectorAll('a').forEach(anchor => {
+        anchor.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const href = anchor.getAttribute('href');
+          hideMenu();
+          setTimeout(() => {
+            window.location.href = href;
+          }, 250);
+        });
+      });
+
+      // Make the entire menuEl close the menu if clicked
+      menuEl.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        hideMenu();
+      });
+
+      // Add close link
+      const closeLink = document.createElement('a');
+      closeLink.classList.add('close');
+      closeLink.href = '#menu';
+      closeLink.textContent = 'Close';
+      menuEl.appendChild(closeLink);
+
+      // Insert the menu element at the end of body
+      document.body.appendChild(menuEl);
+
+      // Toggle menu on anchors pointing to #menu
+      document.querySelectorAll('a[href="#menu"]').forEach(trigger => {
+        trigger.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          toggleMenu();
+        });
+      });
+
+      // Hide menu if user clicks outside
+      document.addEventListener('click', () => {
+        hideMenu();
+      });
+
+      // Hide menu on ESC key press
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' || event.keyCode === 27) {
+          hideMenu();
+        }
+      });
+    }
+
 })();
