@@ -3950,3 +3950,15 @@ input, select, textarea {
 			opacity: 1;
 			visibility: visible;
 		}
+
+		
+		.inline-circle {
+			width: 80px;             /* Adjust size as needed */
+			height: 80px;
+			border-radius: 50%;
+			object-fit: cover;
+			display: inline-block;
+			vertical-align: middle;
+			margin-right: 10px;      /* Space between image and text */
+		}
+		
